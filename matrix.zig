@@ -1,12 +1,25 @@
 const std = @import("std");
-pub fn brew() ![5]i32 {
-    var mut_array_of_int: [5]i32 = [5]i32{ 1, 2, 3, 4, 5 };
-    mut_array_of_int[0] = 10;
-    std.debug.print("mut_array_of_int: {any}\n", .{mut_array_of_int[0]});
-    return mut_array_of_int;
-}
+pub const DataObject = struct {
+    values: std.ArrayList(i32),
+    grad: bool,
+    attributes: std.StringHashMap(i32),
 
-pub fn main() !void {
-    const x = try brew();
-    std.debug.print("mut_array_of_int: {any}\n", .{x});
-}
+    pub fn init(allocator: std.mem.Allocator, grad: bool) DataObject {
+        return .{
+            .values = std.ArrayList(i32).init(allocator),
+            .grad = grad,
+        };
+    }
+
+    pub fn add(self: *DataObject, value: i32) !void {
+        try self.values.append(value);
+    }
+
+    pub fn set(self: *DataObject, index: usize, value: i32) void {
+        self.values.items[index] = value;
+    }
+
+    pub fn print(self: *DataObject) void {
+        std.debug.print("{s}: {any}\n", .{ self.name, self.values.items });
+    }
+};
