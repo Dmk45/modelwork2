@@ -1,7 +1,5 @@
 const std = @import("std");
 const trix = @import("matrix.zig");
-
-// NN builder
 pub fn builder(
     allocator: std.mem.Allocator,
     values: []const f32,
@@ -12,8 +10,8 @@ pub fn builder(
         .f32,
     );
 
-    for (values) |v| {
-        try data.add(v);
+    for (values) |value| {
+        try data.add(value);
     }
 
     return data;
@@ -21,15 +19,23 @@ pub fn builder(
 
 pub fn zeros(
     allocator: std.mem.Allocator,
-    size: usize,
+    shape: std.AutoHashMap([]const u8, usize),
 ) !trix.DataObject {
+    // 1. Get dimensions safely using optional unwrapping
+    const rows = shape.get("rows") orelse return error.MissingRows;
+    const cols = shape.get("cols") orelse return error.MissingCols;
+    const total_size = rows * cols;
+
+    // 2. Initialize the data object with the calculated total size
     var data = try trix.DataObject.init(
         allocator,
-        size,
+        total_size,
         .f32,
     );
 
-    for (size) |i| {
+    // 3. Fill with zeros
+    // If DataObject h mas an 'add' method:
+    for (0..total_size) |_| {
         try data.add(0.0);
     }
 
@@ -50,3 +56,5 @@ pub fn main() !void {
     std.debug.print("\nFinal object:\n", .{});
     data.print();
 }
+
+// TODO: Able to change Matrix size and type by modifying the builder function and the zeros function.
