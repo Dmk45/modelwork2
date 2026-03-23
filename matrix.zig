@@ -56,6 +56,13 @@ pub fn remove(self: *DataObject, index: usize) !f32 {
     return self.values.orderedRemove(index);
 }
 
+pub fn set(self: *DataObject, index: usize, value: f32) !f32 {
+    if (index >= self.values.items.len)
+        return error.IndexOutOfBounds;
+
+    self.values.items[index] = value;
+}
+
 // Fast remove (does not preserve order)
 pub fn swapRemove(self: *DataObject, index: usize) !f32 {
     if (index >= self.values.items.len)

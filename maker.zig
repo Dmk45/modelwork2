@@ -1,43 +1,48 @@
 const std = @import("std");
 const trix = @import("matrix.zig");
+
+fn getRank(comptime T: type) usize {
+    return switch (@typeInfo(T)) {
+        .Array => |info| 1 + getRank(info.child),
+        else => 0,
+    };
+}
+
+fn getShape(comptime T: type) [getRank(T)]usize {
+    const rank = comptime getRank(T);
+    var res: [rank]usize = undefined;
+    var CurrentType = T;
+    inline for (0..rank) |i| {
+        const info = @typeInfo(CurrentType).Array;
+        res[i] = info.len;
+        CurrentType = info.child;
+    }
+    return res;
+}
+
 pub fn builder(
     allocator: std.mem.Allocator,
-    values: []const f32,
+    values: anytype,
 ) !trix.DataObject {
-    var data = try trix.DataObject.init(
-        allocator,
-        values.len,
-        .f32,
-    );
+    const T = @TypeOf(values);
+    const shape = comptime getShape(T);
 
-    for (values) |value| {
-        try data.add(value);
-    }
+    const data = try trix.DataObject.init(allocator, &shape, .f32);
+
+    // Flatten nested arrays into the allocated slice
+    const flat_ptr: [*]const f32 = @ptrCast(&values);
+    @memcpy(data.values, flat_ptr[0..data.values.len]);
 
     return data;
 }
-
-pub fn zeros(
-    allocator: std.mem.Allocator,
-    shape: std.AutoHashMap([]const u8, usize),
-) !trix.DataObject {
-    // 1. Get dimensions safely using optional unwrapping
-    const rows = shape.get("rows") orelse return error.MissingRows;
-    const cols = shape.get("cols") orelse return error.MissingCols;
-    const total_size = rows * cols;
-
-    // 2. Initialize the data object with the calculated total size
-    var data = try trix.DataObject.init(
+pub fn zeros(allocator: std.mem.Allocator, shape: []const usize) !trix.DataObject {
+    const data = try trix.DataObject.init(
         allocator,
-        total_size,
+        shape,
         .f32,
     );
 
-    // 3. Fill with zeros
-    // If DataObject h mas an 'add' method:
-    for (0..total_size) |_| {
-        try data.add(0.0);
-    }
+    @memset(data.values, 0.0);
 
     return data;
 }
