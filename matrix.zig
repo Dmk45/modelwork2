@@ -129,9 +129,11 @@ pub const DataObject = struct {
         self.grad = true;
     }
 
-    fn ensureGradValue(self: *DataObject) !void {
+    pub fn ensureGradValue(self: *DataObject) !void {
         if (self.grad_value == null) {
             self.grad_value = try std.ArrayList(f32).initCapacity(self.allocator, self.values.items.len);
+            try self.grad_value.?.resize(self.allocator, self.values.items.len);
+            @memset(self.grad_value.?.items, 0.0);
         }
     }
 
