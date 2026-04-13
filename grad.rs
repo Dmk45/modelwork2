@@ -1,6 +1,34 @@
 use std::collections::HashMap;
 use std::mem;
 
+extern "C" {
+    fn grad_math_matmul_backward(a: usize, b: usize, d_output: usize, allocator: *mut std::ffi::c_void);
+    fn grad_math_add_backward(a: usize, b: usize, d_output: usize);
+    fn grad_math_sub_backward(a: usize, b: usize, d_output: usize);
+    fn grad_math_mul_backward(a: usize, b: usize, d_output: usize);
+    fn grad_math_div_backward(a: usize, b: usize, d_output: usize);
+    fn grad_math_scale_backward(tensor: usize, scalar: f32, d_output: usize);
+    fn grad_math_add_scalar_backward(tensor: usize, d_output: usize);
+    fn grad_math_transpose_backward(input: usize, d_output: usize, allocator: *mut std::ffi::c_void);
+    fn grad_math_reshape_backward(input: usize, d_output: usize, allocator: *mut std::ffi::c_void);
+    fn grad_math_sum_backward(tensor: usize, d_output: usize);
+    fn grad_math_mean_backward(tensor: usize, d_output: usize);
+    fn grad_math_dot_backward(a: usize, b: usize, d_output: usize);
+    fn grad_math_add_bias_backward(matrix: usize, bias: usize, d_output: usize);
+    fn grad_math_matvec_backward(matrix: usize, vec: usize, d_output: usize, allocator: *mut std::ffi::c_void);
+    fn grad_math_outer_backward(a: usize, b: usize, d_output: usize);
+    fn grad_math_frobenius_norm_backward(tensor: usize, d_output: usize);
+    fn grad_math_clamp_backward(tensor: usize, min_val: f32, max_val: f32, d_output: usize);
+    fn grad_math_abs_backward(tensor: usize, d_output: usize);
+    fn grad_math_relu_backward(input: usize, d_output: usize);
+    fn grad_math_sigmoid_backward(input: usize, d_output: usize);
+    fn grad_math_tanh_backward(input: usize, d_output: usize);
+    fn grad_math_elu_backward(input: usize, alpha: f32, d_output: usize);
+    fn grad_math_leaky_relu_backward(input: usize, negative_slope: f32, d_output: usize);
+    fn grad_math_gelu_backward(input: usize, d_output: usize);
+    fn grad_math_softmax_backward(input: usize, softmax_output: usize, d_output: usize);
+}
+
 /// Activation function types
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Activation {
@@ -285,104 +313,153 @@ impl Tape {
     // In a real implementation, these would be extern "C" functions calling into Zig
 
     fn call_matmul_backward(&self, _node: &GradNode) {
-        // TODO: FFI call to grad_math.matmulBackward
-        println!("Calling matmul backward for node {:?}", _node.op);
+        unsafe {
+            grad_math_matmul_backward(_node.inputs[0], _node.inputs[1], _node.output, std::ptr::null_mut());
+        }
     }
 
     fn call_add_backward(&self, _node: &GradNode) {
-        println!("Calling add backward for node {:?}", _node.op);
+        unsafe {
+            grad_math_add_backward(_node.inputs[0], _node.inputs[1], _node.output);
+        }
     }
 
     fn call_sub_backward(&self, _node: &GradNode) {
-        println!("Calling sub backward for node {:?}", _node.op);
+        unsafe {
+            grad_math_sub_backward(_node.inputs[0], _node.inputs[1], _node.output);
+        }
     }
 
     fn call_mul_backward(&self, _node: &GradNode) {
-        println!("Calling mul backward for node {:?}", _node.op);
+        unsafe {
+            grad_math_mul_backward(_node.inputs[0], _node.inputs[1], _node.output);
+        }
     }
 
     fn call_div_backward(&self, _node: &GradNode) {
-        println!("Calling div backward for node {:?}", _node.op);
+        unsafe {
+            grad_math_div_backward(_node.inputs[0], _node.inputs[1], _node.output);
+        }
     }
 
     fn call_scale_backward(&self, _node: &GradNode, _scalar: f32) {
-        println!("Calling scale backward for node {:?}", _node.op);
+        unsafe {
+            grad_math_scale_backward(_node.inputs[0], _scalar, _node.output);
+        }
     }
 
     fn call_add_scalar_backward(&self, _node: &GradNode) {
-        println!("Calling add_scalar backward for node {:?}", _node.op);
+        unsafe {
+            grad_math_add_scalar_backward(_node.inputs[0], _node.output);
+        }
     }
 
     fn call_transpose_backward(&self, _node: &GradNode) {
-        println!("Calling transpose backward for node {:?}", _node.op);
+        unsafe {
+            grad_math_transpose_backward(_node.inputs[0], _node.output, std::ptr::null_mut());
+        }
     }
 
     fn call_reshape_backward(&self, _node: &GradNode) {
-        println!("Calling reshape backward for node {:?}", _node.op);
+        unsafe {
+            grad_math_reshape_backward(_node.inputs[0], _node.output, std::ptr::null_mut());
+        }
     }
 
     fn call_sum_backward(&self, _node: &GradNode) {
-        println!("Calling sum backward for node {:?}", _node.op);
+        unsafe {
+            grad_math_sum_backward(_node.inputs[0], _node.output);
+        }
     }
 
     fn call_mean_backward(&self, _node: &GradNode) {
-        println!("Calling mean backward for node {:?}", _node.op);
+        unsafe {
+            grad_math_mean_backward(_node.inputs[0], _node.output);
+        }
     }
 
     fn call_dot_backward(&self, _node: &GradNode) {
-        println!("Calling dot backward for node {:?}", _node.op);
+        unsafe {
+            grad_math_dot_backward(_node.inputs[0], _node.inputs[1], _node.output);
+        }
     }
 
     fn call_add_bias_backward(&self, _node: &GradNode) {
-        println!("Calling add_bias backward for node {:?}", _node.op);
+        unsafe {
+            grad_math_add_bias_backward(_node.inputs[0], _node.inputs[1], _node.output);
+        }
     }
 
     fn call_matvec_backward(&self, _node: &GradNode) {
-        println!("Calling matvec backward for node {:?}", _node.op);
+        unsafe {
+            grad_math_matvec_backward(_node.inputs[0], _node.inputs[1], _node.output, std::ptr::null_mut());
+        }
     }
 
     fn call_outer_backward(&self, _node: &GradNode) {
-        println!("Calling outer backward for node {:?}", _node.op);
+        unsafe {
+            grad_math_outer_backward(_node.inputs[0], _node.inputs[1], _node.output);
+        }
     }
 
     fn call_frobenius_norm_backward(&self, _node: &GradNode) {
-        println!("Calling frobenius_norm backward for node {:?}", _node.op);
+        unsafe {
+            grad_math_frobenius_norm_backward(_node.inputs[0], _node.output);
+        }
     }
 
     fn call_clamp_backward(&self, _node: &GradNode, _min: f32, _max: f32) {
-        println!("Calling clamp backward for node {:?}", _node.op);
+        unsafe {
+            grad_math_clamp_backward(_node.inputs[0], _min, _max, _node.output);
+        }
     }
 
     fn call_abs_backward(&self, _node: &GradNode) {
-        println!("Calling abs backward for node {:?}", _node.op);
+        unsafe {
+            grad_math_abs_backward(_node.inputs[0], _node.output);
+        }
     }
 
     fn call_relu_backward(&self, _node: &GradNode) {
-        println!("Calling relu backward for node {:?}", _node.op);
+        unsafe {
+            grad_math_relu_backward(_node.inputs[0], _node.output);
+        }
     }
 
     fn call_sigmoid_backward(&self, _node: &GradNode) {
-        println!("Calling sigmoid backward for node {:?}", _node.op);
+        unsafe {
+            grad_math_sigmoid_backward(_node.inputs[0], _node.output);
+        }
     }
 
     fn call_tanh_backward(&self, _node: &GradNode) {
-        println!("Calling tanh backward for node {:?}", _node.op);
+        unsafe {
+            grad_math_tanh_backward(_node.inputs[0], _node.output);
+        }
     }
 
     fn call_elu_backward(&self, _node: &GradNode, _alpha: f32) {
-        println!("Calling elu backward for node {:?}", _node.op);
+        unsafe {
+            grad_math_elu_backward(_node.inputs[0], _alpha, _node.output);
+        }
     }
 
     fn call_leaky_relu_backward(&self, _node: &GradNode, _slope: f32) {
-        println!("Calling leaky_relu backward for node {:?}", _node.op);
+        unsafe {
+            grad_math_leaky_relu_backward(_node.inputs[0], _slope, _node.output);
+        }
     }
 
     fn call_gelu_backward(&self, _node: &GradNode) {
-        println!("Calling gelu backward for node {:?}", _node.op);
+        unsafe {
+            grad_math_gelu_backward(_node.inputs[0], _node.output);
+        }
     }
 
     fn call_softmax_backward(&self, _node: &GradNode) {
-        println!("Calling softmax backward for node {:?}", _node.op);
+        unsafe {
+            grad_math_softmax_backward(_node.inputs[0], _node.output, _node.output);
+        }
     }
 }
 

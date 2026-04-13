@@ -2,6 +2,27 @@ const std = @import("std");
 const trix = @import("matrix.zig");
 const core = @import("core_math.zig");
 
+// =============================================================================
+// TENSOR REGISTRY FOR FFI
+// =============================================================================
+
+var tensor_registry: std.AutoHashMap(usize, *trix.DataObject) = undefined;
+
+/// Initialize the tensor registry
+export fn grad_math_init_registry(allocator: *std.mem.Allocator) void {
+    tensor_registry = std.AutoHashMap(usize, *trix.DataObject).init(allocator.*);
+}
+
+/// Register a tensor in the registry
+export fn grad_math_register_tensor(id: usize, data: *trix.DataObject) void {
+    tensor_registry.put(id, data) catch {};
+}
+
+/// Get a tensor from the registry
+fn get_tensor(id: usize) ?*trix.DataObject {
+    return tensor_registry.get(id);
+}
+
 /// Gradient computation for element-wise addition: d(a) += d(output), d(b) += d(output)
 /// Both inputs must have gradients enabled
 pub fn addBackward(a: *trix.DataObject, b: *trix.DataObject, d_output: *trix.DataObject) !void {
@@ -684,52 +705,77 @@ pub fn executeBackward(
 // =============================================================================
 
 /// FFI export: Execute backward pass for addition
-export fn grad_math_add_backward(a: *trix.DataObject, b: *trix.DataObject, d_output: *trix.DataObject) void {
+export fn grad_math_add_backward(a_id: usize, b_id: usize, d_output_id: usize) void {
+    const a = get_tensor(a_id) orelse return;
+    const b = get_tensor(b_id) orelse return;
+    const d_output = get_tensor(d_output_id) orelse return;
     addBackward(a, b, d_output) catch {};
 }
 
 /// FFI export: Execute backward pass for subtraction
-export fn grad_math_sub_backward(a: *trix.DataObject, b: *trix.DataObject, d_output: *trix.DataObject) void {
+export fn grad_math_sub_backward(a_id: usize, b_id: usize, d_output_id: usize) void {
+    const a = get_tensor(a_id) orelse return;
+    const b = get_tensor(b_id) orelse return;
+    const d_output = get_tensor(d_output_id) orelse return;
     subBackward(a, b, d_output) catch {};
 }
 
 /// FFI export: Execute backward pass for multiplication
-export fn grad_math_mul_backward(a: *trix.DataObject, b: *trix.DataObject, d_output: *trix.DataObject) void {
+export fn grad_math_mul_backward(a_id: usize, b_id: usize, d_output_id: usize) void {
+    const a = get_tensor(a_id) orelse return;
+    const b = get_tensor(b_id) orelse return;
+    const d_output = get_tensor(d_output_id) orelse return;
     mulBackward(a, b, d_output) catch {};
 }
 
 /// FFI export: Execute backward pass for division
-export fn grad_math_div_backward(a: *trix.DataObject, b: *trix.DataObject, d_output: *trix.DataObject) void {
+export fn grad_math_div_backward(a_id: usize, b_id: usize, d_output_id: usize) void {
+    const a = get_tensor(a_id) orelse return;
+    const b = get_tensor(b_id) orelse return;
+    const d_output = get_tensor(d_output_id) orelse return;
     divBackward(a, b, d_output) catch {};
 }
 
 /// FFI export: Execute backward pass for scaling
-export fn grad_math_scale_backward(tensor: *trix.DataObject, scalar: f32, d_output: *trix.DataObject) void {
+export fn grad_math_scale_backward(tensor_id: usize, scalar: f32, d_output_id: usize) void {
+    const tensor = get_tensor(tensor_id) orelse return;
+    const d_output = get_tensor(d_output_id) orelse return;
     scaleBackward(tensor, scalar, d_output) catch {};
 }
 
 /// FFI export: Execute backward pass for matrix multiplication
-export fn grad_math_matmul_backward(a: *trix.DataObject, b: *trix.DataObject, d_output: *trix.DataObject, allocator: *std.mem.Allocator) void {
-    const alloc = allocator.*;
-    matmulBackward(a, b, d_output, alloc) catch {};
+export fn grad_math_matmul_backward(a_id: usize, b_id: usize, d_output_id: usize, allocator: *std.mem.Allocator) void {
+    const a = get_tensor(a_id) orelse return;
+    const b = get_tensor(b_id) orelse return;
+    const d_output = get_tensor(d_output_id) orelse return;
+    matmulBackward(a, b, d_output, allocator.*) catch {};
 }
 
 /// FFI export: Execute backward pass for ReLU
-export fn grad_math_relu_backward(input: *trix.DataObject, d_output: *trix.DataObject) void {
+export fn grad_math_relu_backward(input_id: usize, d_output_id: usize) void {
+    const input = get_tensor(input_id) orelse return;
+    const d_output = get_tensor(d_output_id) orelse return;
     reluBackward(input, d_output) catch {};
 }
 
 /// FFI export: Execute backward pass for Sigmoid
-export fn grad_math_sigmoid_backward(input: *trix.DataObject, d_output: *trix.DataObject) void {
+export fn grad_math_sigmoid_backward(input_id: usize, d_output_id: usize) void {
+    const input = get_tensor(input_id) orelse return;
+    const d_output = get_tensor(d_output_id) orelse return;
     sigmoidBackward(input, d_output) catch {};
 }
 
 /// FFI export: Execute backward pass for Tanh
-export fn grad_math_tanh_backward(input: *trix.DataObject, d_output: *trix.DataObject) void {
+export fn grad_math_tanh_backward(input_id: usize, d_output_id: usize) void {
+    const input = get_tensor(input_id) orelse return;
+    const d_output = get_tensor(d_output_id) orelse return;
     tanhBackward(input, d_output) catch {};
 }
 
 /// FFI export: Execute backward pass for Softmax
-export fn grad_math_softmax_backward(input: *trix.DataObject, softmax_output: *trix.DataObject, d_output: *trix.DataObject) void {
+export fn grad_math_softmax_backward(input_id: usize, softmax_output_id: usize, d_output_id: usize) void {
+    const input = get_tensor(input_id) orelse return;
+    const softmax_output = get_tensor(softmax_output_id) orelse return;
+    const d_output = get_tensor(d_output_id) orelse return;
     softmaxBackward(input, softmax_output, d_output) catch {};
 }

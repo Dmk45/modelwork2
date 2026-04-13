@@ -10,6 +10,9 @@ pub fn main() !void {
 
     std.debug.print("\n=== Neural Network with Automatic Layer Management ===\n", .{});
 
+    // Initialize tensor registry for FFI backward calls
+    grad_math.grad_math_init_registry(&allocator);
+
     // Create a neural network with layers
     var nn = try layers_mod.NeuralNetwork.init(allocator);
     defer nn.deinit();
