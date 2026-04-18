@@ -1,0 +1,441 @@
+# ModelWork2: Full-Fledged ML Framework Requirements
+
+## Executive Summary
+ModelWork2 has solid foundational components (tensors, basic layers, optimizers, loss functions) but requires significant additions to become a production-ready ML framework capable of training multi-size models. Below are all critical missing features categorized by priority and impact.
+
+---
+
+## 1. BUILD SYSTEM & PROJECT INFRASTRUCTURE (CRITICAL)
+
+### 1.1 Build Configuration
+- [ ] **build.zig** - Zig build system configuration
+- [ ] **Package management** - Define dependencies, versions
+- [ ] **Cross-platform builds** - Linux, macOS, Windows support
+- [ ] **Optimization levels** - Release/Debug/ReleaseSmall builds
+- [ ] **Test runner integration** - Automated test execution
+- [ ] **Documentation build** - Generate API docs
+
+### 1.2 Project Structure
+- [ ] **Module organization** - Clear directory structure (src/, tests/, examples/)
+- [ ] **Standard layout** - Move core modules to proper locations
+- [ ] **CI/CD pipeline** - Automated testing on commit
+- [ ] **Version management** - Semantic versioning, changelogs
+- [ ] **LICENSE & README** - Comprehensive project documentation
+
+---
+
+## 2. DATA LOADING & PREPROCESSING (CRITICAL)
+
+### 2.1 Data Pipeline
+- [ ] **Dataset interface** - Generic dataset loader abstraction
+- [ ] **CSV/Text support** - Read/write tabular data
+- [ ] **Binary format support** - HDF5, NumPy (.npy), PyTorch (.pt)
+- [ ] **Image loading** - JPEG, PNG, WebP support for vision tasks
+- [ ] **Data batching** - Mini-batch creation, shuffling, stratification
+- [ ] **Data splitting** - Train/val/test splits with deterministic seeding
+- [ ] **Normalization** - StandardScaler, MinMaxScaler, Per-channel normalization
+- [ ] **Augmentation** - Data augmentation pipelines (transforms, crops, flips)
+
+### 2.2 DataLoader
+- [ ] **Batch iteration** - Sequential and random batch access
+- [ ] **Shuffling strategies** - In-order, random, stratified
+- [ ] **Prefetching** - Load next batch while processing current
+- [ ] **Caching** - Store processed data in memory
+- [ ] **Distributed loading** - Multi-worker data loading (if async support added)
+
+---
+
+## 3. LAYER & ARCHITECTURE EXPANSIONS (HIGH PRIORITY)
+
+### 3.1 Core Layers
+- [ ] **Convolutional layers** - Conv1D, Conv2D, Conv3D with padding/stride
+- [ ] **Pooling layers** - MaxPool, AvgPool
+- [ ] **Flatten/Reshape** - Dynamic reshaping
+- [ ] **Dropout** - Regularization during training
+- [ ] **Batch Normalization** - Layer normalization, group norm
+- [ ] **Layer Normalization** - Normalize across features not batch
+
+### 3.2 Advanced Layers
+- [ ] **LSTM/GRU cells** - Recurrent architectures for sequences
+- [ ] **Attention layers** - Multi-head self-attention (Transformers)
+- [ ] **Embedding layers** - Word/token embeddings, Embedding + Positional
+- [ ] **Residual/Skip connections** - Identity mapping variants
+- [ ] **Dense skip connections** - DenseNet-style connections
+
+### 3.3 Layer Composition
+- [ ] **Sequential container** - Stack layers in order
+- [ ] **Branching architectures** - Multiple parallel paths
+- [ ] **Residual blocks** - Standard ResNet blocks
+- [ ] **Inception modules** - Multi-branch feature extraction
+- [ ] **Layer introspection** - Query layer properties, parameter counts
+
+---
+
+## 4. AUTOMATIC DIFFERENTIATION (HIGH PRIORITY)
+
+### 4.1 Computation Graph
+- [ ] **Tape/DAG structure** - Track operations for backprop
+- [ ] **Dynamic vs static graphs** - Flexible computation graphs
+- [ ] **Graph visualization** - Visualize computation flow
+- [ ] **Gradient flow control** - stop_gradient, detach operations
+
+### 4.2 Backward Pass
+- [ ] **Complete backward implementation** - All layer gradients (Conv, Pool, RNN, Attention)
+- [ ] **Full chain rule** - Nested operation derivatives
+- [ ] **In-place gradient management** - Efficient gradient accumulation
+- [ ] **Double backprop** - Computing Hessians/higher-order derivatives
+- [ ] **Gradient accumulation** - Multi-batch gradient averaging
+- [ ] **Gradient clipping** - Prevent exploding gradients
+
+### 4.3 Gradient Utilities
+- [ ] **Gradient checking** - Numerical gradient verification
+- [ ] **Gradient statistics** - Monitor mean/std/max of gradients
+- [ ] **Weight initialization schemes** - Xavier, He, Kaiming initialization
+
+---
+
+## 5. OPTIMIZERS & LEARNING RATE SCHEDULES (HIGH PRIORITY)
+
+### 5.1 Optimizers
+- [ ] **SGD** - Stochastic gradient descent (already have Adam)
+- [ ] **SGD with Momentum** - Nesterov momentum variant
+- [ ] **RMSprop** - Root mean square propagation
+- [ ] **AdaGrad** - Adaptive learning rates per parameter
+- [ ] **AdaBound** - Adam with dynamic bound
+- [ ] **LAMB** - Large batch optimizer
+- [ ] **LARS** - Layer-wise adaptive rate scaling
+
+### 5.2 Learning Rate Scheduling
+- [ ] **StepLR** - Reduce LR at specific epochs
+- [ ] **ExponentialLR** - Exponential decay
+- [ ] **CosineAnnealingLR** - Cosine schedule
+- [ ] **WarmupLR** - Linear warmup then schedule
+- [ ] **CyclicLR** - Triangular learning rate cycling
+- [ ] **ReduceLROnPlateau** - Reduce when metric plateaus
+
+### 5.3 Regularization
+- [ ] **Weight decay** - L2 regularization in optimizers
+- [ ] **Early stopping** - Monitor validation metric
+- [ ] **Gradient clipping** - By norm or value
+- [ ] **Dropout integration** - Proper train/eval mode toggles
+
+---
+
+## 6. LOSS FUNCTIONS (HIGH PRIORITY)
+
+### 6.1 Classification Losses
+- [ ] **MSE** ✓ (partially done)
+- [ ] **CrossEntropy** ✓ (done)
+- [ ] **Binary CrossEntropy** - For binary classification
+- [ ] **Focal Loss** - Address class imbalance
+- [ ] **Label Smoothing** - Regularize predictions
+
+### 6.2 Regression Losses
+- [ ] **L1/MAE** - Mean absolute error
+- [ ] **Smooth L1** - Huber loss
+- [ ] **Quantile Loss** - For quantile regression
+- [ ] **Log-Cosh** - Smoothly approximates L1
+
+### 6.3 Advanced Losses
+- [ ] **Triplet Loss** - Metric learning
+- [ ] **Contrastive Loss** - Similarity learning
+- [ ] **Info NCE** - Contrastive learning
+- [ ] **Hinge Loss** - Support vector style loss
+
+---
+
+## 7. TRAINING & EVALUATION PIPELINE (CRITICAL)
+
+### 7.1 Training Loop
+- [ ] **Trainer class** - Abstracts training boilerplate
+- [ ] **Epoch management** - Multi-epoch training with state
+- [ ] **Validation during training** - Evaluate on val set each epoch
+- [ ] **Progress reporting** - Formatted progress bars
+- [ ] **Metrics tracking** - Loss, accuracy, custom metrics
+- [ ] **Checkpointing** - Save best model during training
+
+### 7.2 Evaluation & Testing
+- [ ] **Evaluation mode** - Disable dropout, batch norm momentum
+- [ ] **Inference mode** - No gradient computation
+- [ ] **Batch evaluation** - Process full test sets
+- [ ] **Metric computation** - Accuracy, Precision, Recall, F1, AUC
+- [ ] **Confusion matrices** - Classification analysis
+- [ ] **Threshold tuning** - Optimize decision boundaries
+
+### 7.3 Logging & Monitoring
+- [ ] **Training history** - Track all metrics over time
+- [ ] **Visualization** - Plot loss/accuracy curves
+- [ ] **Logging backends** - File, TensorBoard, Weights&Biases
+- [ ] **Experiment tracking** - Hyperparameter management
+- [ ] **Debug outputs** - Activation statistics, gradient flow
+
+---
+
+## 8. MODEL PERSISTENCE (CRITICAL)
+
+### 8.1 Serialization
+- [ ] **Model checkpointing** - Save/load complete models
+- [ ] **State dict format** - Save/load weight dictionaries
+- [ ] **Architecture serialization** - JSON/YAML config formats
+- [ ] **Version compatibility** - Handle model format versions
+- [ ] **Partial loading** - Load subset of weights
+
+### 8.2 Export Formats
+- [ ] **ONNX export** - Interoperability with other frameworks
+- [ ] **SavedModel/TFLite** - Mobile/edge deployment
+- [ ] **Native Zig format** - Optimized binary format
+- [ ] **Compressed models** - Quantization, pruning support
+
+### 8.3 I/O Operations
+- [ ] **Async save/load** - Non-blocking I/O
+- [ ] **Streaming** - Support large model loading
+- [ ] **Compression** - GZIP, ZSTD compression for weights
+
+---
+
+## 9. ACTIVATION FUNCTIONS (MEDIUM PRIORITY)
+
+### 9.1 Implemented
+- [ ] **ReLU** ✓ (partially)
+- [ ] **Sigmoid** ✓ (partially)
+
+### 9.2 Missing Activations
+- [ ] **GELU** - Gaussian error linear unit (modern default)
+- [ ] **ELU/SELU** - Exponential linear units
+- [ ] **GLU variants** - Gated linear units
+- [ ] **Swish/SiLU** - Self-gated activations
+- [ ] **Mish** - Smooth, non-monotonic
+- [ ] **Hardswish/Hardsigmoid** - Efficient approximations
+- [ ] **Tanh** ✓ (partially done)
+- [ ] **Softmax** ✓ (done)
+- [ ] **LogSoftmax** - Numerically stable version
+
+---
+
+## 10. TENSOR OPERATIONS & UTILITIES (HIGH PRIORITY)
+
+### 10.1 Tensor Manipulation
+- [ ] **Transpose** - Permute dimensions
+- [ ] **Reshape/View** - Change shape without copies
+- [ ] **Squeeze/Unsqueeze** - Remove/add dimensions
+- [ ] **Concatenate** - Combine tensors along axes
+- [ ] **Stack** - Add new dimension and concatenate
+- [ ] **Split** - Distribute tensor into chunks
+- [ ] **Gather/Scatter** - Index-based selection/assignment
+
+### 10.2 Advanced Operations
+- [ ] **Broadcasting** - Automatic dimension alignment
+- [ ] **Einsum** - Einstein summation (flexible tensor contraction)
+- [ ] **Matrix decomposition** - SVD, QR, Cholesky
+- [ ] **Linear algebra** - Solve, Inverse, Determinant
+- [ ] **FFT** - Fast Fourier transform
+
+### 10.3 Statistical Operations
+- [ ] **Reduction ops** - Sum, Mean, Std, Min, Max (per-axis)
+- [ ] **Quantile ops** - Percentile, Median
+- [ ] **Sorting** - Sort, Argsort, TopK
+- [ ] **Unique** - Find unique elements
+- [ ] **Histogram** - Compute value distribution
+
+---
+
+## 11. MULTI-SIZE MODEL SUPPORT (HIGH PRIORITY)
+
+### 11.1 Architecture Flexibility
+- [ ] **Dynamic shapes** - Variable input dimensions
+- [ ] **Parameterized models** - Build by configuration
+- [ ] **Model templates** - ResNet-18/50/152, VGG, Inception, etc.
+- [ ] **Custom layer registration** - User-defined layers
+
+### 11.2 Scaling Strategies
+- [ ] **Model scaling rules** - Width/Depth/Resolution scaling (EfficientNet)
+- [ ] **Batch size scaling** - Training with variable batch sizes
+- [ ] **Mixed precision** - Float32/Float16 training
+
+### 11.3 Distributed Training
+- [ ] **Data parallelism** - Split batches across devices
+- [ ] **Model parallelism** - Split model across devices
+- [ ] **Gradient synchronization** - All-reduce operations
+- [ ] **Distributed sampling** - Consistent shuffling across replicas
+
+---
+
+## 12. DEVICE & MEMORY MANAGEMENT (MEDIUM-HIGH)
+
+### 12.1 Compute Targets
+- [ ] **CPU backends** - Optimized SIMD operations
+- [ ] **GPU support** - CUDA/ROCm/Metal (if pursuing performance)
+- [ ] **Device management** - Automatic placement policies
+- [ ] **Device synchronization** - Async compute handling
+
+### 12.2 Memory
+- [ ] **Memory pooling** - Pre-allocate pools for speed
+- [ ] **Gradient checkpointing** - Trade computation for memory
+- [ ] **Tensor aliasing** - Avoid unnecessary copies
+- [ ] **Memory profiling** - Track usage patterns
+- [ ] **Out-of-core training** - Support tensors > RAM
+
+---
+
+## 13. TESTING & DEBUGGING (HIGH PRIORITY)
+
+### 13.1 Unit Tests
+- [ ] **Comprehensive test suite** - All operations, layers, losses
+- [ ] **Gradient checking** - Numerical verification of gradients
+- [ ] **Edge cases** - Empty tensors, single elements, large tensors
+- [ ] **Type correctness** - F32/F64/I32/I64 support
+
+### 13.2 Integration Tests
+- [ ] **End-to-end workflows** - Train a model on toy data
+- [ ] **Backward compatibility** - Verify model format evolution
+- [ ] **Performance benchmarks** - Track speed/memory over time
+
+### 13.3 Debugging Tools
+- [ ] **Tensor print/visualization** - Better display utilities
+- [ ] **Breakpoints** - Pause training at conditions
+- [ ] **Profiling** - Identify bottlenecks
+- [ ] **Error messages** - Clear error reporting with stack traces
+
+---
+
+## 14. DOCUMENTATION & EXAMPLES (HIGH PRIORITY)
+
+### 14.1 Documentation
+- [ ] **API reference** - Complete function documentation
+- [ ] **Design guide** - Framework architecture overview
+- [ ] **Tutorials** - Step-by-step learning guides
+- [ ] **Migration guides** - Upgrade between versions
+- [ ] **Common patterns** - Best practices
+
+### 14.2 Examples
+- [ ] **Classification** - MNIST, CIFAR-10, ImageNet
+- [ ] **Regression** - Boston housing, synthetic data
+- [ ] **NLP** - Sentiment analysis, language modeling
+- [ ] **Time series** - LSTM examples, forecasting
+- [ ] **Generative** - VAE, simple GAN examples
+- [ ] **Transfer learning** - Fine-tuning pre-trained models
+- [ ] **Hyperparameter tuning** - Grid search, random search
+
+---
+
+## 15. COMMUNITY & ECOSYSTEM (MEDIUM PRIORITY)
+
+### 15.1 Integration
+- [ ] **CLI tools** - Command-line utilities for training/inference
+- [ ] **Web API** - REST/gRPC for model serving
+- [ ] **Plugin system** - Third-party layer/optimizer registration
+- [ ] **Interop** - Integration with Python/Node.js FFI
+
+### 15.2 Community
+- [ ] **Contributing guide** - Clear process for PRs
+- [ ] **Issue templates** - Bug/feature request templates
+- [ ] **Community forum** - Discussions and support
+- [ ] **Model zoo** - Pre-trained models repository
+
+---
+
+## 16. PERFORMANCE OPTIMIZATION (MEDIUM PRIORITY)
+
+### 16.1 Computational Efficiency
+- [ ] **Kernel fusion** - Combine operations to reduce memory bandwidth
+- [ ] **Auto-tuning** - Select optimal implementations
+- [ ] **SIMD utilization** - Vector instructions for Zig
+- [ ] **Cache optimization** - Improve data locality
+- [ ] **Quantization** - Lower precision training/inference
+
+### 16.2 Memory Efficiency
+- [ ] **Sparse tensors** - Efficient sparse operations
+- [ ] **Recomputation** - Trade memory for compute (gradient checkpointing)
+- [ ] **Pruning** - Remove redundant parameters
+- [ ] **Knowledge distillation** - Compress models
+
+---
+
+## 17. MULTI-SIZE MODEL SPECIFIC FEATURES
+
+### 17.1 Model Configuration
+- [ ] **Config objects** - Reproducible model definitions
+- [ ] **Config validation** - Check configuration consistency
+- [ ] **Config merging** - Override defaults programmatically
+
+### 17.2 Scale Specifications
+- [ ] **Scaling rules** - Apply consistent scaling to model families
+- [ ] **Capacity estimation** - Calculate parameters before building
+- [ ] **FLOP counting** - Estimate training/inference cost
+
+### 17.3 Variants & Presets
+- [ ] **Backbone selection** - Swappable feature extractors
+- [ ] **Head variants** - Different output layers for tasks
+- [ ] **Size presets** - Small/Medium/Large/XLarge variants
+
+---
+
+## IMPLEMENTATION PRIORITY ROADMAP
+
+### Phase 1: Foundation (Must-Have for MVP)
+1. Build system (build.zig)
+2. Complete backward pass for all layers
+3. Data loading pipeline
+4. Better training loop structure
+5. Model checkpointing
+6. Comprehensive testing framework
+
+### Phase 2: Core Features (Make it Useful)
+7. More layers (Conv, Pool, Dropout, BatchNorm)
+8. More optimizers (SGD, RMSprop)
+9. Learning rate schedules
+10. Better logging/metrics
+11. Documentation & examples
+12. Activation functions (GELU, Swish, etc.)
+
+### Phase 3: Production-Ready
+13. Distributed training support
+14. Additional loss functions
+15. Advanced architectures (Transformers, RNNs)
+16. ONNX export
+17. Performance optimizations
+18. Comprehensive test coverage
+
+### Phase 4: Ecosystem (Nice-to-Have)
+19. Model zoo & pre-trained weights
+20. Web API & serving
+21. Python/Node.js FFI bindings
+22. Community contributions & plugins
+
+---
+
+## SUMMARY BY IMPACT & EFFORT
+
+| Feature | Impact | Effort | Priority |
+|---------|--------|--------|----------|
+| Build system | Critical | Low | P0 |
+| Data loading | Critical | Medium | P0 |
+| Training loop | Critical | Low | P0 |
+| Model save/load | Critical | Medium | P0 |
+| Complete backprop | High | High | P1 |
+| Conv/Pool layers | High | High | P1 |
+| More optimizers | High | Low | P1 |
+| Batch normalization | High | Medium | P1 |
+| LR scheduling | High | Low | P1 |
+| Testing framework | High | Medium | P1 |
+| LSTM/RNNs | Medium | High | P2 |
+| Attention layers | Medium | High | P2 |
+| Mixed precision | Medium | Hard | P3 |
+| ONNX export | Medium | Medium | P2 |
+| PyTorch interop | Medium | Hard | P3 |
+| Distributed training | Low | Hard | P3 |
+
+---
+
+## CONCLUSION
+
+To become a **full-fledged ML framework capable of training multi-size models**, ModelWork2 needs:
+
+1. **Solid Foundation** (build system, data loading, training infrastructure)
+2. **Complete Autodiff** (proper backward pass for all operations)
+3. **Diverse Layers & Ops** (Conv, pooling, normalization, attention)
+4. **Production Features** (checkpointing, logging, metrics, evaluation)
+5. **Performance** (optimizations, mixed precision, distributed training)
+6. **Flexibility** (dynamic shapes, model templates, easy configuration)
+
+The roadmap prioritizes getting to **Phase 1 completion** (MVP) as quickly as possible, with approximately 20-30 core features needed before the framework is usable for real training tasks.
