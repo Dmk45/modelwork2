@@ -160,10 +160,10 @@ pub const NeuralNetwork = struct {
 
     pub fn update_parameters(self: *NeuralNetwork, optimizer: *grad_mod.Adam) !void {
         for (self.layers.items) |*layer| {
-            if (layer.weights.grad_value) |*_| {
+            if (layer.weights.grad_value) |_| {
                 try optimizer.step(&layer.weights);
             }
-            if (layer.bias.grad_value) |*_| {
+            if (layer.bias.grad_value) |_| {
                 try optimizer.step(&layer.bias);
             }
         }

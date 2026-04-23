@@ -1,9 +1,10 @@
 const std = @import("std");
-const builder_mod = @import("maker.zig");
-const grad_mod = @import("grad.zig");
-const grad_math = @import("grad_math.zig");
-const core_mod = @import("core_math.zig");
-const layers_mod = @import("layers.zig");
+const lib = @import("modelwork2");
+const builder_mod = lib.maker;
+const grad_mod = lib.grad;
+const grad_math = lib.grad_math;
+const core_mod = lib.core_math;
+const layers_mod = lib.layers;
 
 pub fn main() !void {
     const allocator = std.heap.page_allocator;
@@ -11,7 +12,7 @@ pub fn main() !void {
     std.debug.print("\n=== Neural Network with Automatic Layer Management ===\n", .{});
 
     // Initialize tensor registry for FFI backward calls
-    grad_math.grad_math_init_registry(&allocator);
+    grad_math.grad_math_init_registry(allocator);
 
     // Create a neural network with layers
     var nn = try layers_mod.NeuralNetwork.init(allocator);

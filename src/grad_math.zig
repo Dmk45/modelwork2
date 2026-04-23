@@ -9,8 +9,8 @@ const core = @import("core_math.zig");
 var tensor_registry: std.AutoHashMap(usize, *trix.DataObject) = undefined;
 
 /// Initialize the tensor registry
-export fn grad_math_init_registry(allocator: *std.mem.Allocator) void {
-    tensor_registry = std.AutoHashMap(usize, *trix.DataObject).init(allocator.*);
+pub fn grad_math_init_registry(allocator: std.mem.Allocator) void {
+    tensor_registry = std.AutoHashMap(usize, *trix.DataObject).init(allocator);
 }
 
 /// Register a tensor in the registry

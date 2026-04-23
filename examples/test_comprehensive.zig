@@ -1,8 +1,9 @@
 const std = @import("std");
-const builder_mod = @import("maker.zig");
-const grad_mod = @import("grad.zig");
-const grad_math = @import("grad_math.zig");
-const core_mod = @import("core_math.zig");
+const lib = @import("modelwork2");
+const builder_mod = lib.maker;
+const grad_mod = lib.grad;
+const grad_math = lib.grad_math;
+const core_mod = lib.core_math;
 
 pub fn main() !void {
     const allocator = std.heap.page_allocator;
