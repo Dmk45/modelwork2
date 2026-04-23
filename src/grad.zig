@@ -164,3 +164,237 @@ pub const Adam = struct {
         @memset(param.grad_value.?.items, 0.0);
     }
 };
+
+/// SGD optimizer with optional momentum and Nesterov acceleration.
+pub const SGD = struct {
+    lr: f32,
+    momentum: f32,
+    nesterov: bool,
+    weight_decay: f32,
+    velocity: ?std.ArrayList(f32),
+    allocator: std.mem.Allocator,
+
+    pub fn init(allocator: std.mem.Allocator, lr: f32, momentum: f32, nesterov: bool, weight_decay: f32) SGD {
+        return .{
+            .lr = lr,
+            .momentum = momentum,
+            .nesterov = nesterov,
+            .weight_decay = weight_decay,
+            .velocity = null,
+            .allocator = allocator,
+        };
+    }
+
+    pub fn deinit(self: *SGD) void {
+        if (self.velocity) |*v| v.deinit(self.allocator);
+    }
+
+    pub fn step(self: *SGD, param: *trix.DataObject) !void {
+        if (param.grad_value == null) return;
+        if (self.velocity == null) {
+            self.velocity = try std.ArrayList(f32).initCapacity(self.allocator, param.values.items.len);
+            try self.velocity.?.resize(self.allocator, param.values.items.len);
+            @memset(self.velocity.?.items, 0.0);
+        }
+
+        for (0..param.values.items.len) |i| {
+            var grad = param.grad_value.?.items[i];
+            if (self.weight_decay != 0.0) grad += self.weight_decay * param.values.items[i];
+            self.velocity.?.items[i] = self.momentum * self.velocity.?.items[i] + grad;
+            const update = if (self.nesterov) grad + self.momentum * self.velocity.?.items[i] else self.velocity.?.items[i];
+            param.values.items[i] -= self.lr * update;
+        }
+        @memset(param.grad_value.?.items, 0.0);
+    }
+};
+
+/// RMSprop optimizer.
+pub const RMSprop = struct {
+    lr: f32,
+    alpha: f32,
+    epsilon: f32,
+    weight_decay: f32,
+    square_avg: ?std.ArrayList(f32),
+    allocator: std.mem.Allocator,
+
+    pub fn init(allocator: std.mem.Allocator, lr: f32, alpha: f32, epsilon: f32, weight_decay: f32) RMSprop {
+        return .{
+            .lr = lr,
+            .alpha = alpha,
+            .epsilon = epsilon,
+            .weight_decay = weight_decay,
+            .square_avg = null,
+            .allocator = allocator,
+        };
+    }
+
+    pub fn deinit(self: *RMSprop) void {
+        if (self.square_avg) |*s| s.deinit(self.allocator);
+    }
+
+    pub fn step(self: *RMSprop, param: *trix.DataObject) !void {
+        if (param.grad_value == null) return;
+        if (self.square_avg == null) {
+            self.square_avg = try std.ArrayList(f32).initCapacity(self.allocator, param.values.items.len);
+            try self.square_avg.?.resize(self.allocator, param.values.items.len);
+            @memset(self.square_avg.?.items, 0.0);
+        }
+        for (0..param.values.items.len) |i| {
+            var grad = param.grad_value.?.items[i];
+            if (self.weight_decay != 0.0) grad += self.weight_decay * param.values.items[i];
+            self.square_avg.?.items[i] = self.alpha * self.square_avg.?.items[i] + (1.0 - self.alpha) * grad * grad;
+            param.values.items[i] -= self.lr * grad / (std.math.sqrt(self.square_avg.?.items[i]) + self.epsilon);
+        }
+        @memset(param.grad_value.?.items, 0.0);
+    }
+};
+
+/// AdaGrad optimizer.
+pub const AdaGrad = struct {
+    lr: f32,
+    epsilon: f32,
+    weight_decay: f32,
+    sum_sq: ?std.ArrayList(f32),
+    allocator: std.mem.Allocator,
+
+    pub fn init(allocator: std.mem.Allocator, lr: f32, epsilon: f32, weight_decay: f32) AdaGrad {
+        return .{
+            .lr = lr,
+            .epsilon = epsilon,
+            .weight_decay = weight_decay,
+            .sum_sq = null,
+            .allocator = allocator,
+        };
+    }
+
+    pub fn deinit(self: *AdaGrad) void {
+        if (self.sum_sq) |*s| s.deinit(self.allocator);
+    }
+
+    pub fn step(self: *AdaGrad, param: *trix.DataObject) !void {
+        if (param.grad_value == null) return;
+        if (self.sum_sq == null) {
+            self.sum_sq = try std.ArrayList(f32).initCapacity(self.allocator, param.values.items.len);
+            try self.sum_sq.?.resize(self.allocator, param.values.items.len);
+            @memset(self.sum_sq.?.items, 0.0);
+        }
+        for (0..param.values.items.len) |i| {
+            var grad = param.grad_value.?.items[i];
+            if (self.weight_decay != 0.0) grad += self.weight_decay * param.values.items[i];
+            self.sum_sq.?.items[i] += grad * grad;
+            param.values.items[i] -= self.lr * grad / (std.math.sqrt(self.sum_sq.?.items[i]) + self.epsilon);
+        }
+        @memset(param.grad_value.?.items, 0.0);
+    }
+};
+
+pub const StepLR = struct {
+    step_size: usize,
+    gamma: f32,
+    pub fn step(self: StepLR, base_lr: f32, epoch: usize) f32 {
+        const k = @divFloor(epoch, self.step_size);
+        return base_lr * std.math.pow(f32, self.gamma, @as(f32, @floatFromInt(k)));
+    }
+};
+
+pub const ExponentialLR = struct {
+    gamma: f32,
+    pub fn step(self: ExponentialLR, base_lr: f32, epoch: usize) f32 {
+        return base_lr * std.math.pow(f32, self.gamma, @as(f32, @floatFromInt(epoch)));
+    }
+};
+
+pub const WarmupLR = struct {
+    warmup_epochs: usize,
+    target_lr: f32,
+    pub fn step(self: WarmupLR, epoch: usize) f32 {
+        if (self.warmup_epochs == 0 or epoch >= self.warmup_epochs) return self.target_lr;
+        const t = @as(f32, @floatFromInt(epoch + 1)) / @as(f32, @floatFromInt(self.warmup_epochs));
+        return self.target_lr * t;
+    }
+};
+
+pub fn binaryCrossEntropy(y_pred: *trix.DataObject, y_true: *trix.DataObject) !f32 {
+    if (y_pred.values.items.len != y_true.values.items.len) return error.ShapeMismatch;
+    const n = @as(f32, @floatFromInt(y_pred.values.items.len));
+    var loss: f32 = 0.0;
+    for (0..y_pred.values.items.len) |i| {
+        const p = std.math.clamp(y_pred.values.items[i], 1e-7, 1.0 - 1e-7);
+        const y = y_true.values.items[i];
+        loss += -(y * std.math.log(f32, std.math.e, p) + (1.0 - y) * std.math.log(f32, std.math.e, 1.0 - p));
+    }
+    loss /= n;
+    if (y_pred.grad) {
+        try y_pred.ensureGradValue();
+        for (0..y_pred.values.items.len) |i| {
+            const p = std.math.clamp(y_pred.values.items[i], 1e-7, 1.0 - 1e-7);
+            const y = y_true.values.items[i];
+            y_pred.grad_value.?.items[i] += (p - y) / (p * (1.0 - p) * n);
+        }
+    }
+    return loss;
+}
+
+pub fn l1Loss(y_pred: *trix.DataObject, y_true: *trix.DataObject) !f32 {
+    if (y_pred.values.items.len != y_true.values.items.len) return error.ShapeMismatch;
+    const n = @as(f32, @floatFromInt(y_pred.values.items.len));
+    var loss: f32 = 0.0;
+    for (0..y_pred.values.items.len) |i| {
+        loss += @abs(y_pred.values.items[i] - y_true.values.items[i]);
+    }
+    return loss / n;
+}
+
+pub fn smoothL1Loss(y_pred: *trix.DataObject, y_true: *trix.DataObject, beta: f32) !f32 {
+    if (y_pred.values.items.len != y_true.values.items.len) return error.ShapeMismatch;
+    if (beta <= 0.0) return error.InvalidBeta;
+    const n = @as(f32, @floatFromInt(y_pred.values.items.len));
+    var loss: f32 = 0.0;
+    for (0..y_pred.values.items.len) |i| {
+        const d = @abs(y_pred.values.items[i] - y_true.values.items[i]);
+        if (d < beta) {
+            loss += 0.5 * d * d / beta;
+        } else {
+            loss += d - 0.5 * beta;
+        }
+    }
+    return loss / n;
+}
+
+pub fn hingeLoss(y_pred: *trix.DataObject, y_true: *trix.DataObject) !f32 {
+    if (y_pred.values.items.len != y_true.values.items.len) return error.ShapeMismatch;
+    const n = @as(f32, @floatFromInt(y_pred.values.items.len));
+    var loss: f32 = 0.0;
+    for (0..y_pred.values.items.len) |i| {
+        const margin = 1.0 - y_true.values.items[i] * y_pred.values.items[i];
+        if (margin > 0.0) loss += margin;
+    }
+    return loss / n;
+}
+
+pub fn clipGradientsByValue(param: *trix.DataObject, min_val: f32, max_val: f32) void {
+    if (param.grad_value == null) return;
+    for (param.grad_value.?.items) |*g| {
+        g.* = std.math.clamp(g.*, min_val, max_val);
+    }
+}
+
+pub fn clipGradientsByNorm(param: *trix.DataObject, max_norm: f32) void {
+    if (param.grad_value == null or max_norm <= 0.0) return;
+    var norm: f32 = 0.0;
+    for (param.grad_value.?.items) |g| norm += g * g;
+    norm = std.math.sqrt(norm);
+    if (norm <= max_norm) return;
+    const scale = max_norm / (norm + 1e-12);
+    for (param.grad_value.?.items) |*g| g.* *= scale;
+}
+
+/// Accumulate external gradients into a parameter gradient buffer.
+pub fn accumulateGradients(param: *trix.DataObject, grads: []const f32, average_by: usize) !void {
+    if (grads.len != param.values.items.len) return error.ShapeMismatch;
+    try param.ensureGradValue();
+    const denom = if (average_by == 0) 1.0 else @as(f32, @floatFromInt(average_by));
+    for (grads, 0..) |g, i| {
+        param.grad_value.?.items[i] += g / denom;
+    }
+}

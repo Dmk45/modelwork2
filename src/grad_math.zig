@@ -367,7 +367,7 @@ pub fn absBackward(tensor: *trix.DataObject, d_output: *trix.DataObject) !void {
     if (tensor.grad_value == null) return;
 
     for (0..tensor.values.items.len) |i| {
-        const sign = if (tensor.values.items[i] > 0.0) 1.0 else if (tensor.values.items[i] < 0.0) -1.0 else 0.0;
+        const sign: f32 = if (tensor.values.items[i] > 0.0) 1.0 else if (tensor.values.items[i] < 0.0) -1.0 else 0.0;
         tensor.grad_value.?.items[i] += d_output.values.items[i] * sign;
     }
 }
@@ -521,17 +521,12 @@ pub const OperationType = enum {
 
 /// Metadata for operations that need additional parameters
 pub const OperationMetadata = union(OperationType) {
-    Scale: f32,
-    AddScalar: f32,
-    Clamp: struct { min: f32, max: f32 },
-    ELU: f32,
-    LeakyReLU: f32,
-    Softmax: []const usize, // output shape
-    MatMul: void,
     Add: void,
     Sub: void,
     Mul: void,
     Div: void,
+    Scale: f32,
+    AddScalar: f32,
     Transpose: void,
     Reshape: void,
     Sum: void,
@@ -541,11 +536,16 @@ pub const OperationMetadata = union(OperationType) {
     MatVec: void,
     Outer: void,
     FrobeniusNorm: void,
+    Clamp: struct { min: f32, max: f32 },
     Abs: void,
     ReLU: void,
     Sigmoid: void,
     Tanh: void,
+    ELU: f32,
+    LeakyReLU: f32,
     GELU: void,
+    Softmax: []const usize, // output shape
+    MatMul: void,
 };
 
 /// Execute backward pass for a single operation

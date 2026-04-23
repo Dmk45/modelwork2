@@ -275,13 +275,13 @@ pub fn reshape(tensor: *trix.DataObject, new_shape: []const usize, allocator: st
     }
 
     // Update shape
-    tensor.shape.?.clearAndFree();
+    tensor.shape.?.clearAndFree(allocator);
     for (new_shape) |dim| {
         try tensor.shape.?.append(allocator, dim);
     }
 
     // Recalculate strides
-    tensor.strides.?.clearAndFree();
+    tensor.strides.?.clearAndFree(allocator);
     var total_size: usize = 1;
     var i: usize = new_shape.len;
     while (i > 0) {
@@ -452,4 +452,121 @@ pub fn abs(allocator: std.mem.Allocator, tensor: *trix.DataObject) !trix.DataObj
     }
 
     return result;
+}
+
+/// Remove a dimension of size 1.
+pub fn squeeze(allocator: std.mem.Allocator, tensor: *trix.DataObject, axis: usize) !trix.DataObject {
+    const s = tensor.shape.?.items;
+    if (axis >= s.len or s[axis] != 1) return error.ShapeMismatch;
+    var new_shape = try std.ArrayList(usize).initCapacity(allocator, s.len - 1);
+    defer new_shape.deinit(allocator);
+    for (s, 0..) |dim, i| {
+        if (i != axis) try new_shape.append(allocator, dim);
+    }
+    const out = try trix.DataObject.init(allocator, new_shape.items, .f32);
+    @memcpy(out.values.items, tensor.values.items);
+    return out;
+}
+
+/// Insert a singleton dimension.
+pub fn unsqueeze(allocator: std.mem.Allocator, tensor: *trix.DataObject, axis: usize) !trix.DataObject {
+    const s = tensor.shape.?.items;
+    if (axis > s.len) return error.ShapeMismatch;
+    var new_shape = try std.ArrayList(usize).initCapacity(allocator, s.len + 1);
+    defer new_shape.deinit(allocator);
+    for (0..s.len + 1) |i| {
+        if (i == axis) {
+            try new_shape.append(allocator, 1);
+        } else {
+            const src_i = if (i < axis) i else i - 1;
+            try new_shape.append(allocator, s[src_i]);
+        }
+    }
+    const out = try trix.DataObject.init(allocator, new_shape.items, .f32);
+    @memcpy(out.values.items, tensor.values.items);
+    return out;
+}
+
+/// Concatenate rank-2 tensors along axis 0 or 1.
+pub fn concatenate(allocator: std.mem.Allocator, tensors: []const *trix.DataObject, axis: usize) !trix.DataObject {
+    if (tensors.len == 0) return error.ShapeMismatch;
+    const base = tensors[0].shape.?.items;
+    if (base.len != 2 or axis > 1) return error.ShapeMismatch;
+    var out_shape = [2]usize{ base[0], base[1] };
+    out_shape[axis] = 0;
+    for (tensors) |t| {
+        const s = t.shape.?.items;
+        if (s.len != 2) return error.ShapeMismatch;
+        if (axis == 0 and s[1] != base[1]) return error.ShapeMismatch;
+        if (axis == 1 and s[0] != base[0]) return error.ShapeMismatch;
+        out_shape[axis] += s[axis];
+    }
+    var out = try trix.DataObject.init(allocator, &out_shape, .f32);
+    if (axis == 0) {
+        var row_cursor: usize = 0;
+        for (tensors) |t| {
+            const rows = t.shape.?.items[0];
+            const cols = t.shape.?.items[1];
+            const dst_start = row_cursor * out_shape[1];
+            const count = rows * cols;
+            @memcpy(out.values.items[dst_start .. dst_start + count], t.values.items[0..count]);
+            row_cursor += rows;
+        }
+    } else {
+        const rows = base[0];
+        var col_offsets = try std.ArrayList(usize).initCapacity(allocator, tensors.len);
+        defer col_offsets.deinit(allocator);
+        var running: usize = 0;
+        for (tensors) |t| {
+            try col_offsets.append(allocator, running);
+            running += t.shape.?.items[1];
+        }
+        for (0..rows) |r| {
+            for (tensors, 0..) |t, ti| {
+                const cols = t.shape.?.items[1];
+                const src = r * cols;
+                const dst = r * out_shape[1] + col_offsets.items[ti];
+                @memcpy(out.values.items[dst .. dst + cols], t.values.items[src .. src + cols]);
+            }
+        }
+    }
+    return out;
+}
+
+/// Stack rank-2 tensors along a new leading axis.
+pub fn stack(allocator: std.mem.Allocator, tensors: []const *trix.DataObject) !trix.DataObject {
+    if (tensors.len == 0) return error.ShapeMismatch;
+    const s = tensors[0].shape.?.items;
+    if (s.len != 2) return error.ShapeMismatch;
+    for (tensors[1..]) |t| {
+        if (!std.mem.eql(usize, s, t.shape.?.items)) return error.ShapeMismatch;
+    }
+    const out_shape = [_]usize{ tensors.len, s[0], s[1] };
+    var out = try trix.DataObject.init(allocator, &out_shape, .f32);
+    const plane = s[0] * s[1];
+    for (tensors, 0..) |t, i| {
+        const dst = i * plane;
+        @memcpy(out.values.items[dst .. dst + plane], t.values.items[0..plane]);
+    }
+    return out;
+}
+
+/// Split a rank-2 tensor into contiguous chunks along axis 1.
+pub fn split(allocator: std.mem.Allocator, tensor: *trix.DataObject, chunk_size: usize, axis: usize) !std.ArrayList(trix.DataObject) {
+    const s = tensor.shape.?.items;
+    if (s.len != 2 or axis != 1 or chunk_size == 0 or s[1] % chunk_size != 0) return error.ShapeMismatch;
+    const rows = s[0];
+    const cols = s[1];
+    const chunks = cols / chunk_size;
+    var out = try std.ArrayList(trix.DataObject).initCapacity(allocator, chunks);
+    for (0..chunks) |c| {
+        var part = try trix.DataObject.init(allocator, &[_]usize{ rows, chunk_size }, .f32);
+        for (0..rows) |r| {
+            const src = r * cols + c * chunk_size;
+            const dst = r * chunk_size;
+            @memcpy(part.values.items[dst .. dst + chunk_size], tensor.values.items[src .. src + chunk_size]);
+        }
+        try out.append(allocator, part);
+    }
+    return out;
 }

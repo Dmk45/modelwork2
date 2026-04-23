@@ -7,3 +7,5 @@ pub const layers = @import("layers.zig");
 pub const matlab = @import("matlab.zig");
 pub const matlab2 = @import("matlab2.zig");
 pub const data_pipeline = @import("data_pipeline.zig");
+pub const autodiff = @import("autodiff.zig");
+pub const trainer = @import("trainer.zig");
