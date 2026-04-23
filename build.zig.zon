@@ -1,6 +1,6 @@
 .{
     .fingerprint = 0x874c2fb904db46db,
-    .name = .modelwork2,
+    .name = "modelwork2",
     .version = "0.1.0",
     .minimum_zig_version = "0.13.0",
     .paths = .{

@@ -133,7 +133,7 @@ pub const NeuralNetwork = struct {
         activation: []const u8,
     ) !void {
         const layer = try LinearLayer.init(self.allocator, input_size, output_size, activation);
-        try self.layers.append(self.allocator, layer);
+        try self.layers.append(layer);
     }
 
     pub fn forward(self: *NeuralNetwork, allocator: std.mem.Allocator, input: *trix.DataObject) !trix.DataObject {
@@ -173,7 +173,7 @@ pub const NeuralNetwork = struct {
         for (self.layers.items) |*layer| {
             layer.deinit();
         }
-        self.layers.deinit(self.allocator);
+        self.layers.deinit();
     }
 
     pub fn get_layer(self: *NeuralNetwork, idx: usize) ?*LinearLayer {
@@ -793,18 +793,17 @@ pub const Sequential = struct {
     }
 
     pub fn addLinear(self: *Sequential, input_size: usize, output_size: usize, activation: []const u8) !void {
-        try self.layers.append(self.allocator, try LinearLayer.init(self.allocator, input_size, output_size, activation));
+        try self.layers.append(try LinearLayer.init(self.allocator, input_size, output_size, activation));
     }
 
     pub fn forward(self: *Sequential, allocator: std.mem.Allocator, input: *trix.DataObject) !trix.DataObject {
         var nn = NeuralNetwork{ .allocator = self.allocator, .layers = self.layers };
-        _ = allocator;
-        return nn.forward(self.allocator, input);
+        return nn.forward(allocator, input);
     }
 
     pub fn deinit(self: *Sequential) void {
         for (self.layers.items) |*l| l.deinit();
-        self.layers.deinit(self.allocator);
+        self.layers.deinit();
     }
 };
 

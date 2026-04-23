@@ -61,11 +61,11 @@ pub const CsvDataset = struct {
 
         var features = std.ArrayList(f32).empty;
         errdefer features.deinit(allocator);
-        try features.resize(allocator, row_count * feature_count);
+        try features.resize(row_count * feature_count);
 
         var labels = std.ArrayList(f32).empty;
         errdefer labels.deinit(allocator);
-        try labels.resize(allocator, row_count);
+        try labels.resize(row_count);
 
         for (0..row_count) |r| {
             const base = r * feature_count;
@@ -114,7 +114,7 @@ pub const CsvDataset = struct {
         const feature_count = width * height;
         var features = std.ArrayList(f32).empty;
         errdefer features.deinit(allocator);
-        try features.resize(allocator, feature_count);
+        try features.resize(feature_count);
 
         for (0..feature_count) |i| {
             const px_s = tok.next() orelse return error.InvalidImageFile;
@@ -124,7 +124,7 @@ pub const CsvDataset = struct {
 
         var labels = std.ArrayList(f32).empty;
         errdefer labels.deinit(allocator);
-        try labels.append(allocator, label);
+        try labels.append(label);
 
         return .{
             .allocator = allocator,
@@ -169,7 +169,7 @@ pub const CsvDataset = struct {
             while (columns.next()) |col| {
                 const token = std.mem.trim(u8, col, " \t\r");
                 if (token.len == 0) return error.InvalidCsvValue;
-                try values.append(allocator, std.fmt.parseFloat(f32, token) catch return error.InvalidCsvValue);
+                try values.append(std.fmt.parseFloat(f32, token) catch return error.InvalidCsvValue);
             }
 
             if (values.items.len < 2) return error.InvalidCsvRow;
@@ -179,7 +179,7 @@ pub const CsvDataset = struct {
             } else maybe_feature_count = current_feature_count;
 
             try features.appendSlice(allocator, values.items[0..current_feature_count]);
-            try labels.append(allocator, values.items[current_feature_count]);
+            try labels.append(values.items[current_feature_count]);
             row_count += 1;
         }
 
@@ -250,7 +250,7 @@ pub const StandardScaler = struct {
         const feature_count = dataset.featureCount();
         var means = std.ArrayList(f32).empty;
         errdefer means.deinit(allocator);
-        try means.resize(allocator, feature_count);
+        try means.resize(feature_count);
         @memset(means.items, 0.0);
 
         const row_buf = try allocator.alloc(f32, feature_count);
@@ -264,7 +264,7 @@ pub const StandardScaler = struct {
 
         var stds = std.ArrayList(f32).empty;
         errdefer stds.deinit(allocator);
-        try stds.resize(allocator, feature_count);
+        try stds.resize(feature_count);
         @memset(stds.items, 0.0);
         for (indices) |idx| {
             try dataset.fillRowFeatures(idx, row_buf);
@@ -300,10 +300,10 @@ pub const MinMaxScaler = struct {
         const feature_count = dataset.featureCount();
         var mins = std.ArrayList(f32).empty;
         errdefer mins.deinit(allocator);
-        try mins.resize(allocator, feature_count);
+        try mins.resize(feature_count);
         var maxs = std.ArrayList(f32).empty;
         errdefer maxs.deinit(allocator);
-        try maxs.resize(allocator, feature_count);
+        try maxs.resize(feature_count);
         @memset(mins.items, std.math.inf(f32));
         @memset(maxs.items, -std.math.inf(f32));
 
@@ -428,7 +428,7 @@ pub fn shardIndices(
     var out = std.ArrayList(usize).empty;
     errdefer out.deinit(allocator);
     for (indices, 0..) |idx, pos| {
-        if (pos % shard.world_size == shard.rank) try out.append(allocator, idx);
+        if (pos % shard.world_size == shard.rank) try out.append(idx);
     }
     return out;
 }

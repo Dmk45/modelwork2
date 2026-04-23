@@ -49,13 +49,13 @@ pub const DataObject = struct {
         }
 
         var shape_list = try std.ArrayList(usize).initCapacity(allocator, dims.len);
-        for (dims) |sh| try shape_list.append(allocator, sh);
+        for (dims) |sh| try shape_list.append(sh);
 
         var strides_list = try std.ArrayList(usize).initCapacity(allocator, dims.len);
-        for (strides) |st| try strides_list.append(allocator, st);
+        for (strides) |st| try strides_list.append(st);
 
         var values = try std.ArrayList(f32).initCapacity(allocator, total_size);
-        try values.resize(allocator, total_size);
+        try values.resize(total_size);
 
         allocator.free(strides); // since we copied to list
 
@@ -103,15 +103,15 @@ pub const DataObject = struct {
     }
 
     pub fn deinit(self: *DataObject) void {
-        if (self.shape) |*s| s.deinit(self.allocator);
-        if (self.strides) |*s| s.deinit(self.allocator);
-        self.values.deinit(self.allocator);
-        if (self.grad_value) |*g| g.deinit(self.allocator);
+        if (self.shape) |*s| s.deinit();
+        if (self.strides) |*s| s.deinit();
+        self.values.deinit();
+        if (self.grad_value) |*g| g.deinit();
         if (self.attributes) |*a| a.deinit();
     }
 
     pub fn add(self: *DataObject, value: f32) !void {
-        try self.values.append(self.allocator, value);
+        try self.values.append(value);
     }
 
     fn ensureShape(self: *DataObject) !void {
@@ -122,7 +122,7 @@ pub const DataObject = struct {
 
     pub fn addDim(self: *DataObject, dim: usize) !void {
         try self.ensureShape();
-        try self.shape.?.append(self.allocator, dim);
+        try self.shape.?.append(dim);
     }
 
     pub fn enableGrad(self: *DataObject) void {
@@ -132,14 +132,14 @@ pub const DataObject = struct {
     pub fn ensureGradValue(self: *DataObject) !void {
         if (self.grad_value == null) {
             self.grad_value = try std.ArrayList(f32).initCapacity(self.allocator, self.values.items.len);
-            try self.grad_value.?.resize(self.allocator, self.values.items.len);
+            try self.grad_value.?.resize(self.values.items.len);
             @memset(self.grad_value.?.items, 0.0);
         }
     }
 
     pub fn addGrad(self: *DataObject, value: f32) !void {
         try self.ensureGradValue();
-        try self.grad_value.?.append(self.allocator, value);
+        try self.grad_value.?.append(value);
     }
 
     fn ensureAttributes(self: *DataObject) void {

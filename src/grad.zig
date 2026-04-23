@@ -118,8 +118,8 @@ pub const Adam = struct {
     }
 
     pub fn deinit(self: *Adam) void {
-        if (self.m) |*m| m.deinit(self.allocator);
-        if (self.v) |*v| v.deinit(self.allocator);
+        if (self.m) |*m| m.deinit();
+        if (self.v) |*v| v.deinit();
     }
 
     pub fn step(self: *Adam, param: *trix.DataObject) !void {
@@ -130,12 +130,12 @@ pub const Adam = struct {
         // Initialize m and v if not done
         if (self.m == null) {
             self.m = try std.ArrayList(f32).initCapacity(self.allocator, param.values.items.len);
-            try self.m.?.resize(self.allocator, param.values.items.len);
+            try self.m.?.resize(param.values.items.len);
             @memset(self.m.?.items, 0.0);
         }
         if (self.v == null) {
             self.v = try std.ArrayList(f32).initCapacity(self.allocator, param.values.items.len);
-            try self.v.?.resize(self.allocator, param.values.items.len);
+            try self.v.?.resize(param.values.items.len);
             @memset(self.v.?.items, 0.0);
         }
 
@@ -186,14 +186,14 @@ pub const SGD = struct {
     }
 
     pub fn deinit(self: *SGD) void {
-        if (self.velocity) |*v| v.deinit(self.allocator);
+        if (self.velocity) |*v| v.deinit();
     }
 
     pub fn step(self: *SGD, param: *trix.DataObject) !void {
         if (param.grad_value == null) return;
         if (self.velocity == null) {
             self.velocity = try std.ArrayList(f32).initCapacity(self.allocator, param.values.items.len);
-            try self.velocity.?.resize(self.allocator, param.values.items.len);
+            try self.velocity.?.resize(param.values.items.len);
             @memset(self.velocity.?.items, 0.0);
         }
 
@@ -229,14 +229,14 @@ pub const RMSprop = struct {
     }
 
     pub fn deinit(self: *RMSprop) void {
-        if (self.square_avg) |*s| s.deinit(self.allocator);
+        if (self.square_avg) |*s| s.deinit();
     }
 
     pub fn step(self: *RMSprop, param: *trix.DataObject) !void {
         if (param.grad_value == null) return;
         if (self.square_avg == null) {
             self.square_avg = try std.ArrayList(f32).initCapacity(self.allocator, param.values.items.len);
-            try self.square_avg.?.resize(self.allocator, param.values.items.len);
+            try self.square_avg.?.resize(param.values.items.len);
             @memset(self.square_avg.?.items, 0.0);
         }
         for (0..param.values.items.len) |i| {
@@ -268,14 +268,14 @@ pub const AdaGrad = struct {
     }
 
     pub fn deinit(self: *AdaGrad) void {
-        if (self.sum_sq) |*s| s.deinit(self.allocator);
+        if (self.sum_sq) |*s| s.deinit();
     }
 
     pub fn step(self: *AdaGrad, param: *trix.DataObject) !void {
         if (param.grad_value == null) return;
         if (self.sum_sq == null) {
             self.sum_sq = try std.ArrayList(f32).initCapacity(self.allocator, param.values.items.len);
-            try self.sum_sq.?.resize(self.allocator, param.values.items.len);
+            try self.sum_sq.?.resize(param.values.items.len);
             @memset(self.sum_sq.?.items, 0.0);
         }
         for (0..param.values.items.len) |i| {

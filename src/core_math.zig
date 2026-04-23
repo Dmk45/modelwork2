@@ -277,7 +277,7 @@ pub fn reshape(tensor: *trix.DataObject, new_shape: []const usize, allocator: st
     // Update shape
     tensor.shape.?.clearAndFree(allocator);
     for (new_shape) |dim| {
-        try tensor.shape.?.append(allocator, dim);
+        try tensor.shape.?.append(dim);
     }
 
     // Recalculate strides
@@ -461,7 +461,7 @@ pub fn squeeze(allocator: std.mem.Allocator, tensor: *trix.DataObject, axis: usi
     var new_shape = try std.ArrayList(usize).initCapacity(allocator, s.len - 1);
     defer new_shape.deinit(allocator);
     for (s, 0..) |dim, i| {
-        if (i != axis) try new_shape.append(allocator, dim);
+        if (i != axis) try new_shape.append(dim);
     }
     const out = try trix.DataObject.init(allocator, new_shape.items, .f32);
     @memcpy(out.values.items, tensor.values.items);
@@ -476,10 +476,10 @@ pub fn unsqueeze(allocator: std.mem.Allocator, tensor: *trix.DataObject, axis: u
     defer new_shape.deinit(allocator);
     for (0..s.len + 1) |i| {
         if (i == axis) {
-            try new_shape.append(allocator, 1);
+            try new_shape.append(1);
         } else {
             const src_i = if (i < axis) i else i - 1;
-            try new_shape.append(allocator, s[src_i]);
+            try new_shape.append(s[src_i]);
         }
     }
     const out = try trix.DataObject.init(allocator, new_shape.items, .f32);
@@ -518,7 +518,7 @@ pub fn concatenate(allocator: std.mem.Allocator, tensors: []const *trix.DataObje
         defer col_offsets.deinit(allocator);
         var running: usize = 0;
         for (tensors) |t| {
-            try col_offsets.append(allocator, running);
+            try col_offsets.append(running);
             running += t.shape.?.items[1];
         }
         for (0..rows) |r| {
@@ -566,7 +566,7 @@ pub fn split(allocator: std.mem.Allocator, tensor: *trix.DataObject, chunk_size:
             const dst = r * chunk_size;
             @memcpy(part.values.items[dst .. dst + chunk_size], tensor.values.items[src .. src + chunk_size]);
         }
-        try out.append(allocator, part);
+        try out.append(part);
     }
     return out;
 }

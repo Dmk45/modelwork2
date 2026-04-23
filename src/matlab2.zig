@@ -171,8 +171,7 @@ pub fn matmul(allocator: std.mem.Allocator, a: *trix.DataObject, b: *trix.DataOb
                         const b_idx_flat = b_idx * k * n + ki * n + j;
                         acc += a.values.items[a_idx] * b.values.items[b_idx_flat];
                     }
-                    const result_idx = b_idx * m * n + i * n + j;
-                    result.values.items[result_idx] = acc;
+                    try result.values.append(acc);
                 }
             }
         }
@@ -277,7 +276,7 @@ pub fn reshape(tensor: *trix.DataObject, new_shape: []const usize, allocator: st
     // Update shape
     tensor.shape.?.clearAndFree();
     for (new_shape) |dim| {
-        try tensor.shape.?.append(allocator, dim);
+        try tensor.shape.?.append(dim);
     }
 
     // Recalculate strides
