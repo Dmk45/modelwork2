@@ -5,6 +5,14 @@ const grad_mod = @import("grad.zig");
 const grad_math = @import("grad_math.zig");
 const matlab_mod = @import("matlab.zig");
 
+/// Layer interface for polymorphic layer addition
+pub const Layer = struct {
+    pub fn addToNN(comptime LayerType: type, nn: *NeuralNetwork, args: anytype) !void {
+        const layer = try LayerType.init(nn.allocator, args);
+        try nn.layers.append(layer);
+    }
+};
+
 /// Layer configuration and state management
 pub const LayerConfig = struct {
     input_size: usize,
@@ -111,6 +119,11 @@ pub const LinearLayer = struct {
     pub fn get_bias(self: *LinearLayer) *trix.DataObject {
         return &self.bias;
     }
+
+    pub fn addNN(nn: *NeuralNetwork, input_size: usize, output_size: usize, activation: []const u8) !void {
+        const layer = try LinearLayer.init(nn.allocator, input_size, output_size, activation);
+        try nn.layers.append(layer);
+    }
 };
 
 /// Simple neural network container
@@ -124,16 +137,6 @@ pub const NeuralNetwork = struct {
             .allocator = allocator,
             .layers = layers,
         };
-    }
-
-    pub fn add_linear(
-        self: *NeuralNetwork,
-        input_size: usize,
-        output_size: usize,
-        activation: []const u8,
-    ) !void {
-        const layer = try LinearLayer.init(self.allocator, input_size, output_size, activation);
-        try self.layers.append(layer);
     }
 
     pub fn forward(self: *NeuralNetwork, allocator: std.mem.Allocator, input: *trix.DataObject) !trix.DataObject {
@@ -250,6 +253,11 @@ pub const Conv1DLayer = struct {
     pub fn deinit(self: *Conv1DLayer) void {
         self.weights.deinit();
         self.bias.deinit();
+    }
+
+    pub fn addNN(nn: *NeuralNetwork, in_channels: usize, out_channels: usize, kernel_size: usize, stride: usize, padding: usize) !void {
+        const layer = try Conv1DLayer.init(nn.allocator, in_channels, out_channels, kernel_size, stride, padding);
+        try nn.layers.append(layer);
     }
 };
 
@@ -623,6 +631,11 @@ pub const LSTMCell = struct {
         self.w_hh.deinit();
         self.bias.deinit();
     }
+
+    pub fn addNN(nn: *NeuralNetwork, input_size: usize, hidden_size: usize) !void {
+        const layer = try LSTMCell.init(nn.allocator, input_size, hidden_size);
+        try nn.layers.append(layer);
+    }
 };
 
 pub const GRUCell = struct {
@@ -672,6 +685,11 @@ pub const GRUCell = struct {
         self.w_ih.deinit();
         self.w_hh.deinit();
         self.bias.deinit();
+    }
+
+    pub fn addNN(nn: *NeuralNetwork, input_size: usize, hidden_size: usize) !void {
+        const layer = try GRUCell.init(nn.allocator, input_size, hidden_size);
+        try nn.layers.append(layer);
     }
 };
 

@@ -21,13 +21,18 @@ pub fn main() !void {
     // Add layers without manually touching the tape!
     std.debug.print("\nBuilding model architecture:\n", .{});
     std.debug.print("  Layer 1: Linear(10 → 5, relu)\n", .{});
-    try nn.add_linear(10, 5, "relu");
+    try layers_mod.LinearLayer.addNN(&nn, 10, 5, "relu");
 
     std.debug.print("  Layer 2: Linear(5 → 3, relu)\n", .{});
-    try nn.add_linear(5, 3, "relu");
+    try layers_mod.LinearLayer.addNN(&nn, 5, 3, "relu");
 
     std.debug.print("  Output: Linear(3 → 2, none)\n", .{});
-    try nn.add_linear(3, 2, "none");
+    try layers_mod.LinearLayer.addNN(&nn, 3, 2, "none");
+
+    // Example of using other layer types:
+    // try layers_mod.LSTMCell.addNN(&nn, 10, 5);
+    // try layers_mod.GRUCell.addNN(&nn, 10, 5);
+    // try layers_mod.Conv1DLayer.addNN(&nn, 3, 5, 3, 1, 1);
 
     std.debug.print("Model has {} layers\n", .{nn.num_layers()});
 
